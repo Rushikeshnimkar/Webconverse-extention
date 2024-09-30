@@ -90,40 +90,46 @@ export function DiscussionProvider({ children }) {
     }
   };
 
-  const addDiscussion = async (content, parentId = null, mediaFile = null) => {
+  const addDiscussion = async (content, parentId = null, media = null) => {
     if (!user || !currentWebsiteId) return;
 
     let mediaBlobId = null;
     let mediaFileName = null;
     let mediaType = null;
     let mediaBlobUrl = null;
+    let gifUrl = null;
 
-    if (mediaFile) {
-      try {
-        const uploadResponse = await fetch(`${WALRUS_PUBLISHER}/v1/store?epochs=${EPOCHS}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': mediaFile.type,
-          },
-          body: mediaFile,
-        });
+    if (media) {
+      if (media.type === 'gif') {
+        gifUrl = media.url;
+      } else {
+        // Handle file upload to Walrus as before
+        try {
+          const uploadResponse = await fetch(`${WALRUS_PUBLISHER}/v1/store?epochs=${EPOCHS}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': media.file.type,
+            },
+            body: media.file,
+          });
 
-        if (uploadResponse.status === 200) {
-          const info = await uploadResponse.json();
-          if (info.alreadyCertified) {
-            mediaBlobId = info.alreadyCertified.blobId;
-          } else if (info.newlyCreated) {
-            mediaBlobId = info.newlyCreated.blobObject.blobId;
+          if (uploadResponse.status === 200) {
+            const info = await uploadResponse.json();
+            if (info.alreadyCertified) {
+              mediaBlobId = info.alreadyCertified.blobId;
+            } else if (info.newlyCreated) {
+              mediaBlobId = info.newlyCreated.blobObject.blobId;
+            }
+            mediaBlobUrl = `${WALRUS_AGGREGATOR}/v1/${mediaBlobId}`;
+            mediaFileName = media.file.name;
+            mediaType = media.file.type;
+          } else {
+            throw new Error('Failed to upload file');
           }
-          mediaBlobUrl = `${WALRUS_AGGREGATOR}/v1/${mediaBlobId}`;
-          mediaFileName = mediaFile.name;
-          mediaType = mediaFile.type;
-        } else {
-          throw new Error('Failed to upload file');
+        } catch (error) {
+          console.error('Error uploading media:', error);
+          return null;
         }
-      } catch (error) {
-        console.error('Error uploading media:', error);
-        return null;
       }
     }
 
@@ -139,7 +145,8 @@ export function DiscussionProvider({ children }) {
           media_blob_id: mediaBlobId,
           media_file_name: mediaFileName,
           media_type: mediaType,
-          media_blob_url: mediaBlobUrl
+          media_blob_url: mediaBlobUrl,
+          gif_url: gifUrl
         }
       ])
       .select(`
@@ -166,6 +173,7 @@ export function DiscussionProvider({ children }) {
       setDiscussions(prevDiscussions => [...prevDiscussions, data[0]]);
     }
   };
+
 
   return (
     <DiscussionContext.Provider value={{ discussions, addDiscussion, currentWebsite, isLoading }}>

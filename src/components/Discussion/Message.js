@@ -1,12 +1,16 @@
 import React from 'react';
 
-const WALRUS_AGGREGATOR = 'https://aggregator-devnet.walrus.space'; // Replace with your Walrus aggregator URL
+const WALRUS_AGGREGATOR = 'https://aggregator-devnet.walrus.space';
 
 function Message({ message }) {
   const avatarUrl = message.user?.avatar_url || `https://robohash.org/${message.user?.email || 'anonymous'}?set=set3`;
   const username = message.user?.username || message.user?.email || 'Anonymous';
 
   const renderMedia = () => {
+    if (message.gif_url) {
+      return <img src={message.gif_url} alt="GIF" className="max-w-full h-auto mt-2 rounded" />;
+    }
+
     if (!message.media_blob_id) return null;
 
     const mediaUrl = `${WALRUS_AGGREGATOR}/v1/${message.media_blob_id}`;

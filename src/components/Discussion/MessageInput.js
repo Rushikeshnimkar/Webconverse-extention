@@ -5,21 +5,21 @@ import MediaUploader from './MediaUploader';
 
 function MessageInput() {
   const [content, setContent] = useState('');
-  const [mediaFile, setMediaFile] = useState(null);
+  const [media, setMedia] = useState(null);
   const { addDiscussion } = useDiscussion();
   const { user } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if ((content.trim() || mediaFile) && user) {
-      await addDiscussion(content, null, mediaFile);
+    if ((content.trim() || media) && user) {
+      await addDiscussion(content, null, media);
       setContent('');
-      setMediaFile(null);
+      setMedia(null);
     }
   };
 
-  const handleMediaUpload = (file) => {
-    setMediaFile(file);
+  const handleMediaUpload = (mediaData) => {
+    setMedia(mediaData);
   };
 
   return (
@@ -32,15 +32,23 @@ function MessageInput() {
           className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           rows="3"
         />
-        <MediaUploader onUpload={handleMediaUpload} />
-        {mediaFile && <p>File selected: {mediaFile.name}</p>}
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300 self-end"
-        >
-          Send
-        </button>
+        <div className="flex items-center justify-between">
+          <MediaUploader onUpload={handleMediaUpload} />
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300"
+          >
+            Send
+          </button>
+        </div>
       </div>
+      {media && (
+        <div className="mt-2 text-sm text-gray-600">
+          {media.type === 'gif'
+            ? `GIF selected: ${media.title}`
+            : `File selected: ${media.file.name}`}
+        </div>
+      )}
     </form>
   );
 }
